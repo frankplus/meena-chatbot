@@ -45,9 +45,9 @@ class MultiHeadAttention(layers.Layer):
     return config
 
   def split_heads(self, inputs, batch_size):
-    inputs = tf.reshape(
-        inputs, shape=(batch_size, -1, self.num_heads, self.depth))
-    return tf.transpose(inputs, perm=[0, 2, 1, 3])
+    inputs = layers.Lambda(lambda inputs:tf.reshape(
+        inputs, shape=(batch_size, -1, self.num_heads, self.depth)))(inputs)
+    return layers.Lambda(lambda inputs: tf.transpose(inputs, perm=[0, 2, 1, 3]))(inputs)
 
   def call(self, inputs, **kwargs):
     query, key, value, mask = inputs['query'], inputs['key'], inputs[
@@ -66,16 +66,17 @@ class MultiHeadAttention(layers.Layer):
 
     # scaled dot-product attention
     scaled_attention = scaled_dot_product_attention(query, key, value, mask)
-    scaled_attention = tf.transpose(scaled_attention, perm=[0, 2, 1, 3])
+    scaled_attention = layers.Lambda(lambda scaled_attention: tf.transpose(
+        scaled_attention, perm=[0, 2, 1, 3]))(scaled_attention)
 
     # concatenation of heads
-    concat_attention = tf.reshape(scaled_attention,
-                                  (batch_size, -1, self.d_model))
+    concat_attention = layers.Lambda(lambda scaled_attention: tf.reshape(scaled_attention,
+                                  (batch_size, -1, self.d_model)))(scaled_attention)
 
     # final linear layer
     outputs = self.dense(concat_attention)
 
-    return outputs
+    return outputs   
 
 
 def create_padding_mask(x):
@@ -105,14 +106,14 @@ class PositionalEncoding(layers.Layer):
     return config
 
   def get_angles(self, position, i, d_model):
-    angles = 1 / tf.pow(10000, (2 * (i // 2)) / d_model)
+    angles = 1 / tf.pow(10000, (2 * (i // 2)) / tf.cast(d_model, tf.float32))
     return position * angles
 
   def positional_encoding(self, position, d_model):
     angle_rads = self.get_angles(
-        position=tf.cast(tf.range(position)[:, tf.newaxis], dtype=tf.float32),
-        i=tf.cast(tf.range(d_model)[tf.newaxis, :], dtype=tf.float32),
-        d_model=tf.cast(d_model, dtype=tf.float32))
+        position=tf.range(position, dtype=tf.float32)[:, tf.newaxis],
+        i=tf.range(d_model, dtype=tf.float32)[tf.newaxis, :],
+        d_model=d_model)
     # apply sin to even index in the array
     sines = tf.math.sin(angle_rads[:, 0::2])
     # apply cos to odd index in the array
@@ -138,15 +139,14 @@ def encoder_layer(hparams, name="encoder_layer"):
           'mask': padding_mask
       })
   attention = layers.Dropout(hparams.dropout)(attention)
-  attention += tf.cast(inputs, dtype=tf.float32)
-  attention = layers.LayerNormalization(epsilon=1e-6)(attention)
+  add_attention = layers.add([inputs,attention])
+  attention = layers.LayerNormalization(epsilon=1e-6)(add_attention)
 
-  outputs = layers.Dense(
-      hparams.num_units, activation=hparams.activation)(attention)
+  outputs = layers.Dense(hparams.num_units, activation=hparams.activation)(attention)
   outputs = layers.Dense(hparams.d_model)(outputs)
   outputs = layers.Dropout(hparams.dropout)(outputs)
-  outputs += attention
-  outputs = layers.LayerNormalization(epsilon=1e-6)(outputs)
+  add_attention = layers.add([attention,outputs])
+  outputs = layers.LayerNormalization(epsilon=1e-6)(add_attention)
 
   return tf.keras.Model(
       inputs=[inputs, padding_mask], outputs=outputs, name=name)
@@ -157,7 +157,7 @@ def encoder(hparams, name="encoder"):
   padding_mask = tf.keras.Input(shape=(1, 1, None), name="padding_mask")
 
   embeddings = layers.Embedding(hparams.vocab_size, hparams.d_model)(inputs)
-  embeddings *= tf.math.sqrt(tf.cast(hparams.d_model, dtype=tf.float32))
+  embeddings *= layers.Lambda(lambda d_model: tf.math.sqrt(tf.cast(d_model, tf.float32)))(hparams.d_model)
   embeddings = PositionalEncoding(hparams.vocab_size,
                                   hparams.d_model)(embeddings)
 
@@ -188,8 +188,8 @@ def decoder_layer(hparams, name="decoder_layer"):
           'value': inputs,
           'mask': look_ahead_mask
       })
-  attention1 += tf.cast(inputs, dtype=tf.float32)
-  attention1 = layers.LayerNormalization(epsilon=1e-6)(attention1)
+  add_attention = layers.add([attention1,inputs])
+  attention1 = layers.LayerNormalization(epsilon=1e-6)(add_attention)
 
   attention2 = MultiHeadAttention(
       hparams, name="attention_2")(inputs={
@@ -199,15 +199,15 @@ def decoder_layer(hparams, name="decoder_layer"):
           'mask': padding_mask
       })
   attention2 = layers.Dropout(hparams.dropout)(attention2)
-  attention2 += attention1
-  attention2 = layers.LayerNormalization(epsilon=1e-6)(attention2 + attention1)
+  add_attention = layers.add([attention2,attention1])
+  attention2 = layers.LayerNormalization(epsilon=1e-6)(add_attention)
 
   outputs = layers.Dense(
       hparams.num_units, activation=hparams.activation)(attention2)
   outputs = layers.Dense(hparams.d_model)(outputs)
   outputs = layers.Dropout(hparams.dropout)(outputs)
-  outputs += attention2
-  outputs = layers.LayerNormalization(epsilon=1e-6)(outputs)
+  add_attention = layers.add([outputs,attention2])
+  outputs = layers.LayerNormalization(epsilon=1e-6)(add_attention)
 
   return tf.keras.Model(
       inputs=[inputs, enc_outputs, look_ahead_mask, padding_mask],
@@ -224,7 +224,7 @@ def decoder(hparams, name='decoder'):
   padding_mask = tf.keras.Input(shape=(1, 1, None), name='padding_mask')
 
   embeddings = layers.Embedding(hparams.vocab_size, hparams.d_model)(inputs)
-  embeddings *= tf.math.sqrt(tf.cast(hparams.d_model, dtype=tf.float32))
+  embeddings *= layers.Lambda(lambda d_model: tf.math.sqrt(tf.cast(d_model, tf.float32)))(hparams.d_model)
   embeddings = PositionalEncoding(hparams.vocab_size,
                                   hparams.d_model)(embeddings)
 

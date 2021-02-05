@@ -31,6 +31,8 @@ model = transformer(hparams)
 model.load_weights(model_dir + 'checkpoint.h5')
 print("loaded model")
 
+tf.random.set_seed(1234)
+
 def preprocess_sentence(sentence):
   sentence = sentence.lower().strip()
   # creating a space between a word and the punctuation following it
