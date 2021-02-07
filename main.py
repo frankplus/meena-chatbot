@@ -3,7 +3,7 @@ import json
 import re
 import tensorflow_datasets as tfds
 
-model_dir = "./italian_transformer_chatbot/"
+model_dir = "./italian_transformer_chatbot_1Msamples/"
 
 with open(model_dir + 'hparams.json') as file:
   hparams_json = json.load(file)
@@ -38,9 +38,9 @@ def preprocess_sentence(sentence):
   # creating a space between a word and the punctuation following it
   # eg: "he is a boy." => "he is a boy ."
   sentence = re.sub(r"([?.!,])", r" \1 ", sentence)
+  sentence = sentence.replace("'", "' ")
   sentence = re.sub(r'[" "]+', " ", sentence)
-  # replacing everything with space except (a-z, A-Z, ".", "?", "!", ",")
-  sentence = re.sub(r"[^a-zA-Z?.!,àèìòù]+", " ", sentence)
+  sentence = re.sub(r"[^a-zA-Z0-9?.!,àèìòùáéíóú']+", " ", sentence)
   sentence = sentence.strip()
   return sentence
 
