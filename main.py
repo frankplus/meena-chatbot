@@ -15,7 +15,8 @@ class HyperParameters:
       self.dropout = hparams_json["DROPOUT"]
       self.activation = 'relu'
       self.vocab_size = hparams_json["VOCAB_SIZE"]
-      self.num_layers = hparams_json["NUM_LAYERS"]
+      self.num_encoder_layers = hparams_json["NUM_ENCODER_LAYERS"]
+      self.num_decoder_layers = hparams_json["NUM_DECODER_LAYERS"]
       self.num_units = hparams_json["UNITS"]
       self.start_token = hparams_json["START_TOKEN"]
       self.end_token = hparams_json["END_TOKEN"]

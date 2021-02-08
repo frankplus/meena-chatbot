@@ -163,7 +163,7 @@ def encoder(hparams, name="encoder"):
 
   outputs = layers.Dropout(hparams.dropout)(embeddings)
 
-  for i in range(hparams.num_layers):
+  for i in range(hparams.num_encoder_layers):
     outputs = encoder_layer(
         hparams,
         name="encoder_layer_{}".format(i),
@@ -230,7 +230,7 @@ def decoder(hparams, name='decoder'):
 
   outputs = layers.Dropout(hparams.dropout)(embeddings)
 
-  for i in range(hparams.num_layers):
+  for i in range(hparams.num_decoder_layers):
     outputs = decoder_layer(
         hparams,
         name='decoder_layer_{}'.format(i),
