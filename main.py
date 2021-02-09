@@ -3,7 +3,7 @@ import json
 import re
 import tensorflow_datasets as tfds
 
-model_dir = "./italian_transformer_chatbot_1Msamples/"
+model_dir = "./italian_transformer_chatbot_v2/"
 
 with open(model_dir + 'hparams.json') as file:
   hparams_json = json.load(file)
