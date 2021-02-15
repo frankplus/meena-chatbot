@@ -66,10 +66,10 @@ def predict(inputs):
     tot_lengths = sum([len(x) for x in responses])
     return np.random.choice(responses, p = [len(x)/tot_lengths for x in responses])
 
-
-while True:
-    sentence = input("Input: ")
-    print(predict(sentence))
+def main():
+    while True:
+        sentence = input("Input: ")
+        print(predict(sentence))
 
 if __name__ == '__main__':
   main()
