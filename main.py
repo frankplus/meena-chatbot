@@ -7,8 +7,8 @@ from tensor2tensor.data_generators import text_problems
 import numpy as np
 import re
 
-MODEL_DIR = "./evolved_transformer_chatbot/"
-CHECKPOINT_NAME = "model.ckpt-50000"
+MODEL_DIR = "./evolved_transformer_chatbot_2M_200k/"
+CHECKPOINT_NAME = "model.ckpt-200000"
 MODEL = "evolved_transformer"
 VOCAB_SIZE = 2**13
 
@@ -40,10 +40,9 @@ def encode(input_str, output_str=None):
 
 def decode(integers):
     """List of ints to str"""
-    integers = list(np.squeeze(integers))
     if 1 in integers:
         integers = integers[:integers.index(1)]
-    return encoders["inputs"].decode(np.squeeze(integers))
+    return encoders["inputs"].decode(integers)
 
 def preprocess_sentence(sentence):
   sentence = sentence.lower().strip()
@@ -60,13 +59,17 @@ def predict(inputs):
     preprocessed = preprocess_sentence(inputs)
     encoded_inputs = encode(preprocessed)
     with tfe.restore_variables_on_create(ckpt_path):
-        model_output = chatbot_model.infer(encoded_inputs)["outputs"]
-    return decode(model_output)
+        model_output = chatbot_model.infer(encoded_inputs, beam_size=20, top_beams=20)["outputs"]
+    responses = [decode(list(response)) for response in np.squeeze(model_output)]
 
-def main():
-  while True:
-      sentence = input("Input: ")
-      print(predict(sentence))
+    # pick a response with higher probability to longer responses 
+    tot_lengths = sum([len(x) for x in responses])
+    return np.random.choice(responses, p = [len(x)/tot_lengths for x in responses])
+
+
+while True:
+    sentence = input("Input: ")
+    print(predict(sentence))
 
 if __name__ == '__main__':
   main()
