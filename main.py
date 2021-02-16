@@ -7,10 +7,11 @@ from tensor2tensor.data_generators import text_problems
 import numpy as np
 import re
 
-MODEL_DIR = "./evolved_transformer_chatbot_2M_200k/"
-CHECKPOINT_NAME = "model.ckpt-200000"
+MODEL_DIR = "./evolved_transformer_multiturns_300k_100k/"
+CHECKPOINT_NAME = "model.ckpt-100000"
 MODEL = "evolved_transformer"
 VOCAB_SIZE = 2**13
+CONVERSATION_TURNS = 3
 
 tfe = tf.contrib.eager
 tfe.enable_eager_execution()
@@ -32,10 +33,16 @@ ckpt_path = MODEL_DIR + CHECKPOINT_NAME
 
 chatbot_model = registry.model(MODEL)(hparams, Modes.PREDICT)
 
-def encode(input_str, output_str=None):
+def encode(conversation, output_str=None):
     """Input str to features dict, ready for inference"""
-    inputs = encoders["inputs"].encode(input_str) + [1]  # add EOS id
-    batch_inputs = tf.reshape(inputs, [1, -1, 1])  # Make it 3D.
+    encoded_inputs = []
+    for conversation_turn in conversation:
+        encoded_inputs += encoders["inputs"].encode(conversation_turn) + [2]
+    encoded_inputs.pop()
+    encoded_inputs += [1]
+    if len(encoded_inputs) > hparams.max_length:
+        encoded_inputs = encoded_inputs[-hparams.max_length:]
+    batch_inputs = tf.reshape(encoded_inputs, [1, -1, 1])  # Make it 3D.
     return {"inputs": batch_inputs}
 
 def decode(integers):
@@ -55,21 +62,28 @@ def preprocess_sentence(sentence):
   sentence = sentence.strip()
   return sentence
 
-def predict(inputs):
-    preprocessed = preprocess_sentence(inputs)
+def predict(conversation):
+    preprocessed = [preprocess_sentence(x) for x in conversation]
     encoded_inputs = encode(preprocessed)
     with tfe.restore_variables_on_create(ckpt_path):
-        model_output = chatbot_model.infer(encoded_inputs, beam_size=20, top_beams=20)["outputs"]
+        model_output = chatbot_model.infer(encoded_inputs, beam_size=10, top_beams=10)["outputs"]
     responses = [decode(list(response)) for response in np.squeeze(model_output)]
 
     # pick a response with higher probability to longer responses 
     tot_lengths = sum([len(x) for x in responses])
     return np.random.choice(responses, p = [len(x)/tot_lengths for x in responses])
 
+
 def main():
+    conversation = []
     while True:
         sentence = input("Input: ")
-        print(predict(sentence))
+        conversation.append(sentence)
+        while len(conversation) > CONVERSATION_TURNS: 
+            conversation.pop(0)
+        response = predict(conversation)
+        conversation.append(response)
+        print(response)
 
 if __name__ == '__main__':
   main()
