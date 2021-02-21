@@ -8,7 +8,7 @@ The training set used is the [OpenSubtitle](https://opus.nlpl.eu/OpenSubtitles-v
 Similarly to the work done in the paper, this model consists of 1 encoder block and 12 decoder blocks for a total of 108M parameters. The optimizer used is Adafactor with the same training rate schedule as described in the paper.
 
 ## Usage
-For training simply run the ipython notebook on Google Colab, the model will be saved on Google Drive. At the end of the execution you can talk to the chatbot.
+For training simply run the ipython notebook on Google Colab, the model will be saved on Google Drive. At the end of the execution you can interact with the chatbot.
 
 ## Export the model
 The model can be exported by copying the following files in a folder:

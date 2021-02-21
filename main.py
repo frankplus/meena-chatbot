@@ -35,6 +35,7 @@ hparams = hparams_lib.create_hparams_from_json(MODEL_DIR + 'hparams.json')
 hparams.data_dir = MODEL_DIR
 hparams_lib.add_problem_hparams(hparams, "chat_bot")
 hparams.sampling_method = "random"
+hparams.sampling_temp = SAMPLING_TEMPERATURE
 
 chatbot_model = registry.model(MODEL)(hparams, Modes.PREDICT)
 
