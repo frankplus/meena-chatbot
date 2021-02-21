@@ -1,4 +1,4 @@
-tensorflow==1.15.2
+tensorflow==1.15.5
 tensorflow-datasets==3.2.1
 tensor2tensor
 flask
