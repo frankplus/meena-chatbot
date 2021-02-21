@@ -7,7 +7,7 @@ from tensor2tensor.data_generators import text_problems
 import numpy as np
 import re
 
-MODEL_DIR = "./evolved_transformer_multiturns_40M_70k_6blocks/"
+MODEL_DIR = "./models/evolved_transformer_multiturns_40M_70k_6blocks/"
 CHECKPOINT_NAME = "model.ckpt-70000"
 MODEL = "evolved_transformer"
 VOCAB_SIZE = 2**13
