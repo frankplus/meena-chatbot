@@ -7,11 +7,16 @@ from tensor2tensor.data_generators import text_problems
 import numpy as np
 import re
 
-MODEL_DIR = "./evolved_transformer_multiturns_300k_100k/"
-CHECKPOINT_NAME = "model.ckpt-100000"
+MODEL_DIR = "./evolved_transformer_multiturns_40M_70k_6blocks/"
+CHECKPOINT_NAME = "model.ckpt-70000"
 MODEL = "evolved_transformer"
 VOCAB_SIZE = 2**13
-CONVERSATION_TURNS = 3
+
+# sampling parameters
+CONVERSATION_TURNS = 1
+SAMPLING_TEMPERATURE = 0.88
+NUM_SAMPLES = 3
+MAX_LCS_RATIO = 0.8
 
 tfe = tf.contrib.eager
 tfe.enable_eager_execution()
@@ -23,15 +28,30 @@ class ChatBot(text_problems.Text2TextProblem):
     def approx_vocab_size(self):
         return VOCAB_SIZE
 
-
 chat_bot_problem = problems.problem("chat_bot")
+ckpt_path = MODEL_DIR + CHECKPOINT_NAME
 encoders = chat_bot_problem.feature_encoders(MODEL_DIR)
 hparams = hparams_lib.create_hparams_from_json(MODEL_DIR + 'hparams.json')
 hparams.data_dir = MODEL_DIR
 hparams_lib.add_problem_hparams(hparams, "chat_bot")
-ckpt_path = MODEL_DIR + CHECKPOINT_NAME
+hparams.sampling_method = "random"
 
 chatbot_model = registry.model(MODEL)(hparams, Modes.PREDICT)
+
+def preprocess_sentence(sentence):
+    sentence = sentence.lower().strip()
+    # creating a space between a word and the punctuation following it
+    # eg: "he is a boy." => "he is a boy ."
+    sentence = re.sub(r"([?.!,])", r" \1 ", sentence)
+    sentence = sentence.replace("'", "' ")
+    sentence = re.sub(r'[" "]+', " ", sentence)
+    sentence = re.sub(r"[^a-zA-Z0-9?.!,àèìòùáéíóú']+", " ", sentence)
+    sentence = sentence.strip()
+    return sentence
+
+def postprocess_sentence(sentence):
+    # remove space before punctuation
+    return re.sub(r"\s+(\W)", r"\1", sentence)
 
 def encode(conversation, output_str=None):
     """Input str to features dict, ready for inference"""
@@ -47,31 +67,41 @@ def encode(conversation, output_str=None):
 
 def decode(integers):
     """List of ints to str"""
+    integers = list(np.squeeze(integers))
     if 1 in integers:
         integers = integers[:integers.index(1)]
-    return encoders["inputs"].decode(integers)
+    decoded = encoders["inputs"].decode(integers)
+    return postprocess_sentence(decoded)
 
-def preprocess_sentence(sentence):
-  sentence = sentence.lower().strip()
-  # creating a space between a word and the punctuation following it
-  # eg: "he is a boy." => "he is a boy ."
-  sentence = re.sub(r"([?.!,])", r" \1 ", sentence)
-  sentence = sentence.replace("'", "' ")
-  sentence = re.sub(r'[" "]+', " ", sentence)
-  sentence = re.sub(r"[^a-zA-Z0-9?.!,àèìòùáéíóú']+", " ", sentence)
-  sentence = sentence.strip()
-  return sentence
+def lcs_ratio(context, predicted): 
+    m = len(context) 
+    n = len(predicted) 
+    L = [[None]*(n + 1) for i in range(m + 1)] 
+    for i in range(m + 1): 
+        for j in range(n + 1): 
+            if i == 0 or j == 0 : 
+                L[i][j] = 0
+            elif context[i-1] == predicted[j-1]: 
+                L[i][j] = L[i-1][j-1]+1
+            else: 
+                L[i][j] = max(L[i-1][j], L[i][j-1]) 
+    return L[m][n] / n
 
 def predict(conversation):
     preprocessed = [preprocess_sentence(x) for x in conversation]
     encoded_inputs = encode(preprocessed)
     with tfe.restore_variables_on_create(ckpt_path):
-        model_output = chatbot_model.infer(encoded_inputs, beam_size=10, top_beams=10)["outputs"]
-    responses = [decode(list(response)) for response in np.squeeze(model_output)]
+        while True:
+            output_candidates = [chatbot_model.infer(encoded_inputs) for _ in range(NUM_SAMPLES)]
+            output_candidates.sort(key = lambda x: -float(x["scores"]))
 
-    # pick a response with higher probability to longer responses 
-    tot_lengths = sum([len(x) for x in responses])
-    return np.random.choice(responses, p = [len(x)/tot_lengths for x in responses])
+            for x in output_candidates:
+                print(str(float(x["scores"])) + "\t" + decode(x["outputs"]))
+
+            for candidate in output_candidates:
+                decoded = decode(candidate["outputs"])
+                if lcs_ratio(" ".join(preprocessed), decoded) < MAX_LCS_RATIO:
+                    return decoded
 
 
 def main():
