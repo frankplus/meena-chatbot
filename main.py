@@ -15,7 +15,7 @@ VOCAB_SIZE = 2**13
 # sampling parameters
 CONVERSATION_TURNS = 1
 SAMPLING_TEMPERATURE = 0.88
-NUM_SAMPLES = 3
+NUM_SAMPLES = 5
 MAX_LCS_RATIO = 0.8
 
 tfe = tf.contrib.eager
@@ -51,6 +51,7 @@ def preprocess_sentence(sentence):
 
 def postprocess_sentence(sentence):
     # remove space before punctuation
+    sentence = sentence.rstrip(" .")
     return re.sub(r"\s+(\W)", r"\1", sentence)
 
 def encode(conversation, output_str=None):
