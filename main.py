@@ -16,7 +16,7 @@ VOCAB_SIZE = 2**13
 CONVERSATION_TURNS = 3
 SAMPLING_TEMPERATURE = 0.88
 NUM_SAMPLES = 3
-MAX_LCS_RATIO = 0.8
+MAX_LCS_RATIO = 0.9
 
 tfe = tf.contrib.eager
 tfe.enable_eager_execution()
