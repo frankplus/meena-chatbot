@@ -7,15 +7,15 @@ from tensor2tensor.data_generators import text_problems
 import numpy as np
 import re
 
-MODEL_DIR = "./models/evolved_transformer_multiturns_40M_70k_6blocks/"
-CHECKPOINT_NAME = "model.ckpt-70000"
+MODEL_DIR = "./models/evolved_multiturns_40M_75k_12blocks/"
+CHECKPOINT_NAME = "model.ckpt-75000"
 MODEL = "evolved_transformer"
 VOCAB_SIZE = 2**13
 
 # sampling parameters
-CONVERSATION_TURNS = 1
+CONVERSATION_TURNS = 3
 SAMPLING_TEMPERATURE = 0.88
-NUM_SAMPLES = 5
+NUM_SAMPLES = 3
 MAX_LCS_RATIO = 0.8
 
 tfe = tf.contrib.eager
@@ -92,6 +92,7 @@ def lcs_ratio(context, predicted):
 def predict(conversation):
     preprocessed = [preprocess_sentence(x) for x in conversation]
     encoded_inputs = encode(preprocessed)
+    print("decoded input: " + decode(encoded_inputs["inputs"]))
     with tfe.restore_variables_on_create(ckpt_path):
         while True:
             output_candidates = [chatbot_model.infer(encoded_inputs) for _ in range(NUM_SAMPLES)]

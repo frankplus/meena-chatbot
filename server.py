@@ -21,17 +21,25 @@ def getreply():
             "error": "Missing or invalid API key"
         }, 401
 
-    context_id = request.args.get('context')
-    if not context_id:
-        context_id = generate_context_id()
-
     text = request.args.get('input')
     if text:
         print(f"Input: {text}")
 
+    context_id = request.args.get('context')
+    if not context_id:
+        context_id = generate_context_id()
+
+    if context_id not in contexts:
+        contexts[context_id] = list()
+        
+    contexts[context_id].append(text)
+    while len(contexts[context_id]) > main.CONVERSATION_TURNS: 
+        contexts[context_id].pop(0)
+
     # elaborate response
-    answer = str(main.predict(text))
+    answer = str(main.predict(contexts[context_id]))
     print(f"Answer: {answer}")
+    contexts[context_id].append(answer)
 
     return {
         "context": context_id,
