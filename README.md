@@ -3,7 +3,7 @@ Here's my attempt at recreating Meena, a state of the art chatbot developed by G
 
 For this implementation I used the tensor2tensor deep learning library, using an evolved transformer model as described in the paper.
 
-The training set used is the [OpenSubtitle](https://opus.nlpl.eu/OpenSubtitles-v2018.php) corpus in the Italian language, however it is very simple to change to any of the language provided by OpenSubtitles.
+The training set used is the [OpenSubtitles](https://opus.nlpl.eu/OpenSubtitles-v2018.php) corpus in the Italian language, however it is very simple to change to any of the language provided by OpenSubtitles.
 
 Similarly to the work done in the paper, this model consists of 1 encoder block and 12 decoder blocks for a total of 108M parameters. The optimizer used is Adafactor with the same training rate schedule as described in the paper.
 

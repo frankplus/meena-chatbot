@@ -8,14 +8,14 @@ import numpy as np
 import re
 
 MODEL_DIR = "./models/evolved_multiturns_40M_100k_12blocks/"
-CHECKPOINT_NAME = "model.ckpt-100000"
+CHECKPOINT_NAME = "model.ckpt-130000"
 MODEL = "evolved_transformer"
 VOCAB_SIZE = 2**13
 
 # sampling parameters
 CONVERSATION_TURNS = 3
 SAMPLING_TEMPERATURE = 0.88
-NUM_SAMPLES = 3
+NUM_SAMPLES = 5
 MAX_LCS_RATIO = 0.9
 
 tfe = tf.contrib.eager
@@ -95,7 +95,7 @@ def predict(conversation):
     print("decoded input: " + decode(encoded_inputs["inputs"]))
     with tfe.restore_variables_on_create(ckpt_path):
         while True:
-            output_candidates = [chatbot_model.infer(encoded_inputs) for _ in range(NUM_SAMPLES)]
+            output_candidates = [chatbot_model.infer(encoded_inputs, decode_length=30) for _ in range(NUM_SAMPLES)]
             output_candidates.sort(key = lambda x: -float(x["scores"]))
 
             for x in output_candidates:
