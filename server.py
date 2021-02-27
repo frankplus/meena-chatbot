@@ -1,7 +1,7 @@
 from flask import Flask, request
 import secrets
 import string
-import main
+import predict
 
 app = Flask(__name__)
 enabled_api_keys = ["f24eded9-fcd1-4392-b214-01bad08fa69f"]
@@ -32,12 +32,12 @@ def getreply():
     if context_id not in contexts:
         contexts[context_id] = list()
         
-    contexts[context_id].append(text)
-    while len(contexts[context_id]) > main.CONVERSATION_TURNS: 
+    contexts[context_id].extend(text.split('\n'))
+    while len(contexts[context_id]) > predict.CONVERSATION_TURNS: 
         contexts[context_id].pop(0)
 
     # elaborate response
-    answer = str(main.predict(contexts[context_id]))
+    answer = str(predict.predict(contexts[context_id]))
     print(f"Answer: {answer}")
     contexts[context_id].append(answer)
 
