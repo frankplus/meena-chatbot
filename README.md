@@ -27,8 +27,11 @@ The dataset used however does not represent well normal conversations between hu
 
 
 ## Run pretrained model
-Download the following model and extract it. Set proper MODEL_DIR and CHECKPOINT_NAME in `predict.py` and run `main.py`
+Simply run notebook `meena_chatbot_inference.ipynb`.
 
+Otherwise download the following model and extract it. Set proper MODEL_DIR and CHECKPOINT_NAME in `predict.py` and run `main.py`
+
+## Pretrained model checkpoint
 - [Italian, 108M parameters, 200k steps, 40M sentences](https://mega.nz/file/cjZSmLgC#lvZW9g0v4sa6QN4-fVLaUVTLcD6GCjmFMI7_b762pqQ)
 
 ## Train a new model
