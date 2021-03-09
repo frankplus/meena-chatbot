@@ -90,6 +90,11 @@ def lcs_ratio(context, predicted):
     return L[m][n] / n
 
 def predict(conversation):
+    """
+        Elaborate response given input conversation
+        @param conversation: A list of conversation turns
+        @return: the decoded output and the score
+    """
     preprocessed = [preprocess_sentence(x) for x in conversation]
     encoded_inputs = encode(preprocessed)
     print("decoded input: " + decode(encoded_inputs["inputs"]))
@@ -104,4 +109,4 @@ def predict(conversation):
             for candidate in output_candidates:
                 decoded = decode(candidate["outputs"])
                 if lcs_ratio(" ".join(preprocessed), decoded) < MAX_LCS_RATIO:
-                    return decoded
+                    return decoded, float(candidate["scores"])

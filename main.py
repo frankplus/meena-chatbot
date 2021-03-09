@@ -7,7 +7,7 @@ def main():
         conversation.append(sentence)
         while len(conversation) > predict.CONVERSATION_TURNS: 
             conversation.pop(0)
-        response = predict.predict(conversation)
+        response, score = predict.predict(conversation)
         conversation.append(response)
         print(response)
 

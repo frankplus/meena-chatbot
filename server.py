@@ -37,13 +37,14 @@ def getreply():
         contexts[context_id].pop(0)
 
     # elaborate response
-    answer = str(predict.predict(contexts[context_id]))
-    print(f"Answer: {answer}")
+    answer, score = predict.predict(contexts[context_id])
+    print(f"Score: {score} Answer: {answer}")
     contexts[context_id].append(answer)
 
     return {
         "context": context_id,
-        "output": answer
+        "output": str(answer),
+        "score": score
     }
 
 
