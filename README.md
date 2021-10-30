@@ -32,7 +32,7 @@ Simply run notebook `meena_chatbot_inference.ipynb`.
 Otherwise download the following model and extract it. Set proper MODEL_DIR and CHECKPOINT_NAME in `predict.py` and run `main.py`
 
 ## Pretrained model checkpoint
-- [Italian, 108M parameters, 200k steps, 40M sentences](https://mega.nz/file/cjZSmLgC#lvZW9g0v4sa6QN4-fVLaUVTLcD6GCjmFMI7_b762pqQ)
+- [Italian, 108M parameters, 200k steps, 40M sentences](https://mega.nz/file/gYJUDTwC#75YYMYJpWHqfnBl9Uz_YqljSyd71QHvhLfCqhR0OJZ8)
 
 ## Train a new model
 For training simply run the ipython notebook on Google Colab, the model will be saved on Google Drive. At the end of the execution you can interact with the chatbot.
